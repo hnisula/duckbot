@@ -1,0 +1,9 @@
+id: "duckbot-test"
+url: "http://192.168.1.243:5000"
+as_token: "sxAr1v15vvBxSyrXHr2ALBYm9s50OuPw1vWDdUjnyOXgvfEGYNW8gZ0d48BSsr7b"
+hs_token: "U69OhTiYcO9VMpIJFgEECGNf821T7IEH3n7ezirvzr035PoO6vJgGBoVc0it42q2"
+sender_localpart: duckbot-test
+namespaces:
+  users:
+    - exclusive: false
+      regex: *
