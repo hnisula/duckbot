@@ -1,10 +1,18 @@
 import aiohttp
 import json
+from enum import Enum
 
-class MatrixClient:
+class RoomStatus(Enum):
+        JOINED = 1
+        INVITED = 2
+        KNOCKED = 3
+        LEFT = 4
+
+class MatrixClient:    
     async def init(self, server_url):
         self.server_url = server_url
         self.session = aiohttp.ClientSession()
+        self.callbacks = { "a": 4 }
     
     # async def register(self, username, password, device_name = None, device_id = None):
     #     register_request = {
@@ -25,6 +33,14 @@ class MatrixClient:
     #     register_response = await self.session.post(f"{self.server_url}/_matrix/client/v3/register", json.dumps(register_request))
 
     #     return json.loads(register_response.text)
+
+    def add_callback(self, event_type, callback):
+
+        
+        if event_type not in self.callbacks:
+            self.callbacks[event_type] = []
+
+        self.callbacks[event_type].append(callback)
     
     async def login(self, username, password, device_id, device_name):
         login_request = {
@@ -46,63 +62,59 @@ class MatrixClient:
         return hej
     
     async def join_room(self, room_id):
-        await self.post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
+        await self.__post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
 
     async def sync_loop(self):
         params = {}
         
         while True:
-            response = await self.get_request("/_matrix/client/v3/sync?timeout=20000", params)
+            response = await self.__get_request("/_matrix/client/v3/sync?timeout=20000", params)
             params["since"] = response.json_content["next_batch"]
 
-            if response.json_content.has_key("rooms"):
-                await self.handle_room_events(response.json_content["rooms"])
+            if "rooms" in response.json_content:
+                await self.__handle_sync_events(response.json_content["rooms"])
     
-    async def handle_room_events(self, room_events):
-        if room_events.has_key("join"):
-            await self.handle_joined_room_events(room_events["join"])
+    async def __handle_sync_events(self, room_events):
+        if "join" in room_events:
+            await self.__handle_room_events(room_events["join"], RoomStatus.JOINED)
 
-        if room_events.has_key("invite"):
-            await self.handle_invite_room_events(room_events["invite"])
+        if "invite" in room_events:
+            await self.__handle_room_events(room_events["invite"], RoomStatus.INVITED)
     
-    async def handle_joined_room_events(self, joined_room_events):
+    async def __handle_room_events(self, room_events, room_status):
         # The following is not that pretty
-        for room_name in joined_room_events:
-            room = joined_room_events[room_name]
+        for room_name in room_events:
+            room = room_events[room_name]
             
             for event in room["timeline"]["events"]:
-                # For some reason a match pattern did not work here so it was moved into a function
-                await self.handle_room_event(event)
+                type = event["type"]
 
-    async def handle_room_event(self, event):
-        match event["type"]:
-            case "m.room.message":
-                print(event["content"]["body"])
-                if self.callbacks.room_message:
-                    self.callbacks.room_message(event)
+                if type in self.callbacks:
+                    for callback in self.callbacks[type]:
+                        callback(event, room_status)
 
-    async def get_request(self, path, params):
-        headers = self.get_headers()
+    async def __get_request(self, path, params):
+        headers = self.__get_headers()
         
-        async with self.session.get(self.get_url(path), headers=headers, params=params) as response:
+        async with self.session.get(self.__get_url(path), headers=headers, params=params) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
             return response
 
-    async def post_request(self, path, json_body=None):
-        headers = self.get_headers();
+    async def __post_request(self, path, json_body=None):
+        headers = self.__get_headers();
 
-        async with self.session.post(self.get_url(path), json=json_body, headers=headers) as response:
+        async with self.session.post(self.__get_url(path), json=json_body, headers=headers) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
             return response
 
-    def get_url(self, path):
+    def __get_url(self, path):
         return f"{self.server_url}{path}";
 
-    def get_headers(self):
+    def __get_headers(self):
         headers = {}
 
         if self.access_token:
