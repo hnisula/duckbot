@@ -8,7 +8,10 @@ class RoomStatus(Enum):
         KNOCKED = 3
         LEFT = 4
 
-class MatrixClient:    
+class MatrixClient:
+    def __init__(self, storage):
+        self.storage = storage
+    
     async def init(self, server_url):
         self.server_url = server_url
         self.session = aiohttp.ClientSession()
