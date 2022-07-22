@@ -17,7 +17,7 @@ PW = config["bot"]["password"]
 USERNAME = config["bot"]["username"]
 
 class matrix_client:
-    def __init__(self, server_url):
+    async def init(self, server_url):
         self.server_url = server_url
         self.session = aiohttp.ClientSession()
     
@@ -66,10 +66,11 @@ class matrix_client:
     async def sync_loop(self):
         response = await self.session.post()
 
-async def main_test(client):
+async def main_test():
+    client = matrix_client()
+
+    await client.init(SERVER_URL)
     await client.login(USERNAME, PW)
     await client.sync_loop()
 
-client = matrix_client(SERVER_URL)
-
-asyncio.run(main_test(client))
+asyncio.run(main_test())
