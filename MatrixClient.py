@@ -1,21 +1,5 @@
 import aiohttp
-from aiohttp import web
-import time
 import json
-import yaml
-import asyncio
-
-def read_config_file(config_filename):
-    with open(config_filename, "r") as config_file:
-        return yaml.load(config_file, yaml.FullLoader)
-
-config = read_config_file("config.yaml")
-
-SERVER_URL = config["server"]["url"]
-DEVICE_ID = config["device"]["id"]
-DEVICE_NAME = config["device"]["name"]
-PW = config["bot"]["password"]
-USERNAME = config["bot"]["username"]
 
 class MatrixClient:
     async def init(self, server_url):
@@ -42,15 +26,15 @@ class MatrixClient:
 
     #     return json.loads(register_response.text)
     
-    async def login(self, username, password):
+    async def login(self, username, password, device_id, device_name):
         login_request = {
             "type": "m.login.password",
             "identifier": {
                 "type": "m.id.user",
                 "user": username
             },
-            "device_id": DEVICE_ID,
-            "initial_device_display_name": DEVICE_NAME,
+            "device_id": device_id,
+            "initial_device_display_name": device_name,
             "password": password
         }
         async with self.session.post(f"{self.server_url}/_matrix/client/v3/login", json=login_request) as response:
@@ -64,23 +48,38 @@ class MatrixClient:
     async def join_room(self, room_id):
         await self.post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
 
-    async def sync_loop(self):        
+    async def sync_loop(self):
         params = {}
         
         while True:
             response = await self.get_request("/_matrix/client/v3/sync?timeout=20000", params)
             params["since"] = response.json_content["next_batch"]
 
-            # TEST
-            print("---")
-            print(response.json_content)
-
-            # self.handle_room_events(response.json_content["rooms"])
+            if response.json_content.has_key("rooms"):
+                await self.handle_room_events(response.json_content["rooms"])
     
     async def handle_room_events(self, room_events):
-        # for event in room_events:
-        #     match room_events
-        return 4;
+        if room_events.has_key("join"):
+            await self.handle_joined_room_events(room_events["join"])
+
+        if room_events.has_key("invite"):
+            await self.handle_invite_room_events(room_events["invite"])
+    
+    async def handle_joined_room_events(self, joined_room_events):
+        # The following is not that pretty
+        for room_name in joined_room_events:
+            room = joined_room_events[room_name]
+            
+            for event in room["timeline"]["events"]:
+                # For some reason a match pattern did not work here so it was moved into a function
+                await self.handle_room_event(event)
+
+    async def handle_room_event(self, event):
+        match event["type"]:
+            case "m.room.message":
+                print(event["content"]["body"])
+                if self.callbacks.room_message:
+                    self.callbacks.room_message(event)
 
     async def get_request(self, path, params):
         headers = self.get_headers()
@@ -110,12 +109,3 @@ class MatrixClient:
             headers["Authorization"] = f"Bearer {self.access_token}"
 
         return headers;
-
-async def main_test():
-    client = MatrixClient()
-
-    await client.init(SERVER_URL)
-    await client.login(USERNAME, PW)
-    await client.sync_loop()
-
-asyncio.run(main_test())
