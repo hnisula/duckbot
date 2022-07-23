@@ -1,6 +1,7 @@
 import aiohttp
 import json
 from enum import Enum
+from MatrixClientPgStorage import MatrixClientPgStorage
 
 class RoomStatus(Enum):
         JOINED = 1
@@ -9,37 +10,20 @@ class RoomStatus(Enum):
         LEFT = 4
 
 class MatrixClient:
-    def __init__(self, storage):
-        self.storage = storage
+    @classmethod
+    async def create(cls, server_url, storage):
+        session = aiohttp.ClientSession()
+        instance = cls(server_url, session, storage)
+
+        return instance
     
-    async def init(self, server_url):
+    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage):
         self.server_url = server_url
-        self.session = aiohttp.ClientSession()
-        self.callbacks = { "a": 4 }
-    
-    # async def register(self, username, password, device_name = None, device_id = None):
-    #     register_request = {
-    #         "device_id": device_id,
-    #         "initial_device_display_name": device_name,
-    #         "password": password,
-    #         "refresh_token": True,
-    #         "username": username
-    #     }
-
-    #     # This should be extracted into a method for handling the user-interactive auth (but perhaps fail on param requirements)
-    #     auth_response = await self.session.post(f"{self.server_url}/_matrix/client/v3/register", json.dumps(register_request))
-    #     auth_instructions = json.loads(auth_response.text)
-    #     register_request["auth"] = {
-    #         "type": auth_instructions["flows"][0]["stages"][0],
-    #         "session": auth_instructions["session"]
-    #     }
-    #     register_response = await self.session.post(f"{self.server_url}/_matrix/client/v3/register", json.dumps(register_request))
-
-    #     return json.loads(register_response.text)
+        self.session = http_client_session
+        self.storage = storage
+        self.callbacks = {}
 
     def add_callback(self, event_type, callback):
-
-        
         if event_type not in self.callbacks:
             self.callbacks[event_type] = []
 
@@ -71,11 +55,20 @@ class MatrixClient:
         params = {}
         
         while True:
-            response = await self.__get_request("/_matrix/client/v3/sync?timeout=20000", params)
-            params["since"] = response.json_content["next_batch"]
+            params["timeout"] = 20000
+
+            if self.storage.config["since"]:
+                params["since"] = self.storage.config["since"]
+            
+            response = await self.__get_request("/_matrix/client/v3/sync", params)
+            await self.__update_since(response.json_content["next_batch"])
 
             if "rooms" in response.json_content:
                 await self.__handle_sync_events(response.json_content["rooms"])
+    
+    async def __update_since(self, batch_id):
+        self.storage.config["since"] = batch_id
+        self.storage.store()
     
     async def __handle_sync_events(self, room_events):
         if "join" in room_events:
