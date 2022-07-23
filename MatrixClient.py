@@ -1,6 +1,7 @@
 import aiohttp
 import json
 from enum import Enum
+from MatrixClientPgStorage import MatrixClientPgStorage
 
 class RoomStatus(Enum):
         JOINED = 1
@@ -11,12 +12,16 @@ class RoomStatus(Enum):
 class MatrixClient:
     @classmethod
     async def create(cls, server_url, storage):
-        cls.server_url = server_url
-        cls.session = aiohttp.ClientSession()
-        cls.storage = storage
-        cls.callbacks = {}
+        session = aiohttp.ClientSession()
+        instance = cls(server_url, session, storage)
 
-        return cls
+        return instance
+    
+    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage):
+        self.server_url = server_url
+        self.session = http_client_session
+        self.storage = storage
+        self.callbacks = {}
 
     def add_callback(self, event_type, callback):
         if event_type not in self.callbacks:
@@ -50,11 +55,20 @@ class MatrixClient:
         params = {}
         
         while True:
-            response = await self.__get_request("/_matrix/client/v3/sync?timeout=20000", params)
-            params["since"] = response.json_content["next_batch"]
+            params["timeout"] = 20000
+
+            if self.storage.config["since"]:
+                params["since"] = self.storage.config["since"]
+            
+            response = await self.__get_request("/_matrix/client/v3/sync", params)
+            await self.__update_since(response.json_content["next_batch"])
 
             if "rooms" in response.json_content:
                 await self.__handle_sync_events(response.json_content["rooms"])
+    
+    async def __update_since(self, batch_id):
+        self.storage.config["since"] = batch_id
+        self.storage.store()
     
     async def __handle_sync_events(self, room_events):
         if "join" in room_events:
