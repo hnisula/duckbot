@@ -1,7 +1,7 @@
 import asyncio
 from MatrixClient import MatrixClient
 from Config import read_config_file
-from PgStorage import PgStorage
+import PostgresDb
 
 config = read_config_file("config.yaml")
 
@@ -20,14 +20,11 @@ def print_message(event, room_status):
     print(event["content"]["body"])
 
 async def main_test():
-    storage = PgStorage()
+    storage = PostgresDb.connect(DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD)
+    client = MatrixClient.create(SERVER_URL, storage)
 
-    storage.init(DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD)
-    
-    client = MatrixClient(storage)
-
-    await client.init(SERVER_URL)
     client.add_callback("m.room.message", print_message)
+    
     await client.login(USERNAME, PW, DEVICE_ID, DEVICE_NAME)
     await client.sync_loop()
 

@@ -9,37 +9,16 @@ class RoomStatus(Enum):
         LEFT = 4
 
 class MatrixClient:
-    def __init__(self, storage):
-        self.storage = storage
-    
-    async def init(self, server_url):
-        self.server_url = server_url
-        self.session = aiohttp.ClientSession()
-        self.callbacks = { "a": 4 }
-    
-    # async def register(self, username, password, device_name = None, device_id = None):
-    #     register_request = {
-    #         "device_id": device_id,
-    #         "initial_device_display_name": device_name,
-    #         "password": password,
-    #         "refresh_token": True,
-    #         "username": username
-    #     }
+    @classmethod
+    async def create(cls, server_url, storage):
+        cls.server_url = server_url
+        cls.session = aiohttp.ClientSession()
+        cls.storage = storage
+        cls.callbacks = {}
 
-    #     # This should be extracted into a method for handling the user-interactive auth (but perhaps fail on param requirements)
-    #     auth_response = await self.session.post(f"{self.server_url}/_matrix/client/v3/register", json.dumps(register_request))
-    #     auth_instructions = json.loads(auth_response.text)
-    #     register_request["auth"] = {
-    #         "type": auth_instructions["flows"][0]["stages"][0],
-    #         "session": auth_instructions["session"]
-    #     }
-    #     register_response = await self.session.post(f"{self.server_url}/_matrix/client/v3/register", json.dumps(register_request))
-
-    #     return json.loads(register_response.text)
+        return cls
 
     def add_callback(self, event_type, callback):
-
-        
         if event_type not in self.callbacks:
             self.callbacks[event_type] = []
 
