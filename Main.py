@@ -27,7 +27,10 @@ async def main_test():
 
     client.add_callback("m.room.message", print_message)
 
+    print(f"Logging in {USERNAME}...")
     await client.login(USERNAME, PW, DEVICE_ID, DEVICE_NAME)
+    print("Logged in")
+    print("Running sync loop")
     await client.sync_loop()
 
 asyncio.run(main_test())

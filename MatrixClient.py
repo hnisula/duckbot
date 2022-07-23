@@ -10,6 +10,8 @@ class RoomStatus(Enum):
         LEFT = 4
 
 class MatrixClient:
+    auto_join = True
+    
     @classmethod
     async def create(cls, server_url, storage):
         session = aiohttp.ClientSession()
@@ -72,10 +74,12 @@ class MatrixClient:
     
     async def __handle_sync_events(self, room_events):
         if "join" in room_events:
+            # TODO: Reconsider using this method and the RoomStatus to streamline handling events
+            # It might be useless if the other structures are different (as with invitations)
             await self.__handle_room_events(room_events["join"], RoomStatus.JOINED)
 
         if "invite" in room_events:
-            await self.__handle_room_events(room_events["invite"], RoomStatus.INVITED)
+            await self.__handle_room_invites(room_events["invite"])
     
     async def __handle_room_events(self, room_events, room_status):
         # The following is not that pretty
@@ -88,6 +92,11 @@ class MatrixClient:
                 if type in self.callbacks:
                     for callback in self.callbacks[type]:
                         callback(event, room_status)
+    
+    async def __handle_room_invites(self, invites):
+        if self.auto_join:
+            for room_id in invites:
+                await self.join_room(room_id)
 
     async def __get_request(self, path, params):
         headers = self.__get_headers()
