@@ -14,14 +14,13 @@ class MatrixClient:
     
     @classmethod
     async def create(cls, server_url, storage):
-        session = aiohttp.ClientSession()
-        instance = cls(server_url, session, storage)
-
-        return instance
+        http_client_session = aiohttp.ClientSession()
+        
+        return cls(server_url, http_client_session, storage)
     
-    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage):
+    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage,):
         self.server_url = server_url
-        self.session = http_client_session
+        self.http_client = http_client_session
         self.storage = storage
         self.callbacks = {}
 
@@ -42,7 +41,7 @@ class MatrixClient:
             "initial_device_display_name": device_name,
             "password": password
         }
-        async with self.session.post(f"{self.server_url}/_matrix/client/v3/login", json=login_request) as response:
+        async with self.http_client.post(f"{self.server_url}/_matrix/client/v3/login", json=login_request) as response:
             content = json.loads(await response.content.read())
 
             self.access_token = content["access_token"]
@@ -91,7 +90,7 @@ class MatrixClient:
 
                 if type in self.callbacks:
                     for callback in self.callbacks[type]:
-                        callback(event, room_status)
+                        await callback(event, room_status)
     
     async def __handle_room_invites(self, invites):
         if self.auto_join:
@@ -101,7 +100,7 @@ class MatrixClient:
     async def __get_request(self, path, params):
         headers = self.__get_headers()
         
-        async with self.session.get(self.__get_url(path), headers=headers, params=params) as response:
+        async with self.http_client.get(self.__get_url(path), headers=headers, params=params) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
@@ -110,7 +109,7 @@ class MatrixClient:
     async def __post_request(self, path, json_body=None):
         headers = self.__get_headers();
 
-        async with self.session.post(self.__get_url(path), json=json_body, headers=headers) as response:
+        async with self.http_client.post(self.__get_url(path), json=json_body, headers=headers) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
