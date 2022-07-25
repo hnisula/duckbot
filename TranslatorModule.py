@@ -18,23 +18,23 @@ class TranslatorModule:
         if command != "!tl":
             print(f"ERROR: Translator module received unknown command ({command})")
         
-        language_option = message_parts[1].split("-")
-        text = " ".join(message_parts[2:])
-        source_language = None
+        source_lang = message_parts[1]
+        target_lang = message_parts[2]
+        text = " ".join(message_parts[3:])
 
-        if len(language_option) > 1:
-            source_language = language_option[0]
-        
+        if source_lang == "." or source_lang == "?":
+            source_lang = None
+
         try:
             translation = self.deepl_translator.translate_text(
                 text,
-                source_lang=source_language,
-                target_lang=language_option[-1])
+                source_lang=source_lang,
+                target_lang=target_lang)
             
             return self.create_result(
                 translation.text,
-                source_language or translation.detected_source_lang,
-                language_option[-1])
+                source_lang or translation.detected_source_lang,
+                target_lang)
         except deepl.DeepLException as ex:
             return self.create_error_result(ex.args)
         except ValueError as ex:

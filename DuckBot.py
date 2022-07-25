@@ -38,6 +38,9 @@ class DuckBot:
 
         cmd_result = await self.command_processor.parse_command(message)
 
+        if not cmd_result:
+            return
+
         if cmd_result["type"] == "translation":
             if cmd_result["status"] == "success":
                 await self.matrix_client.send_room_message(room_info["room_id"], cmd_result["text"])
