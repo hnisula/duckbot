@@ -53,9 +53,8 @@ class MatrixClient:
         event = self.__create_message_event(room_id, message)
         txn_id = uuid4()
         event_type = event["type"]
-        response = await self.__put_request(f"/_matrix/client/v3/rooms/{room_id}/send/{event_type}/{txn_id}", event)
-
-        print(response)
+        
+        await self.__put_request(f"/_matrix/client/v3/rooms/{room_id}/send/{event_type}/{txn_id}", event)
     
     async def join_room(self, room_id):
         await self.__post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
