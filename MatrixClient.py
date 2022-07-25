@@ -1,3 +1,4 @@
+from uuid import uuid4
 import aiohttp
 import json
 from enum import Enum
@@ -14,14 +15,13 @@ class MatrixClient:
     
     @classmethod
     async def create(cls, server_url, storage):
-        session = aiohttp.ClientSession()
-        instance = cls(server_url, session, storage)
-
-        return instance
+        http_client_session = aiohttp.ClientSession()
+        
+        return cls(server_url, http_client_session, storage)
     
-    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage):
+    def __init__(self, server_url, http_client_session, storage: MatrixClientPgStorage,):
         self.server_url = server_url
-        self.session = http_client_session
+        self.http_client = http_client_session
         self.storage = storage
         self.callbacks = {}
 
@@ -32,6 +32,8 @@ class MatrixClient:
         self.callbacks[event_type].append(callback)
     
     async def login(self, username, password, device_id, device_name):
+        self.username = f"@{username}:ducksquad.io"
+        
         login_request = {
             "type": "m.login.password",
             "identifier": {
@@ -42,13 +44,18 @@ class MatrixClient:
             "initial_device_display_name": device_name,
             "password": password
         }
-        async with self.session.post(f"{self.server_url}/_matrix/client/v3/login", json=login_request) as response:
+        async with self.http_client.post(f"{self.server_url}/_matrix/client/v3/login", json=login_request) as response:
             content = json.loads(await response.content.read())
 
             self.access_token = content["access_token"]
     
-    async def send(self, room_id, message):
-        return hej
+    async def send_room_message(self, room_id, message):
+        event = self.__create_message_event(room_id, message)
+        txn_id = uuid4()
+        event_type = event["type"]
+        response = await self.__put_request(f"/_matrix/client/v3/rooms/{room_id}/send/{event_type}/{txn_id}", event)
+
+        print(response)
     
     async def join_room(self, room_id):
         await self.__post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
@@ -83,25 +90,38 @@ class MatrixClient:
     
     async def __handle_room_events(self, room_events, room_status):
         # The following is not that pretty
-        for room_name in room_events:
-            room = room_events[room_name]
+        for room_id in room_events:
+            room = room_events[room_id]
             
             for event in room["timeline"]["events"]:
                 type = event["type"]
 
                 if type in self.callbacks:
                     for callback in self.callbacks[type]:
-                        callback(event, room_status)
+                        room_info = {
+                            "room_id": room_id,
+                            "room_status": room_status
+                        }
+                        await callback(event, room_info)
     
     async def __handle_room_invites(self, invites):
         if self.auto_join:
             for room_id in invites:
                 await self.join_room(room_id)
 
+    def __create_message_event(self, room_id, message):
+        return {
+            "type": "m.room.message",
+            "sender": self.username,
+            "body": message,
+            "msgtype": "m.text",
+            "room_id": room_id
+        }
+
     async def __get_request(self, path, params):
         headers = self.__get_headers()
         
-        async with self.session.get(self.__get_url(path), headers=headers, params=params) as response:
+        async with self.http_client.get(self.__get_url(path), headers=headers, params=params) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
@@ -110,7 +130,16 @@ class MatrixClient:
     async def __post_request(self, path, json_body=None):
         headers = self.__get_headers();
 
-        async with self.session.post(self.__get_url(path), json=json_body, headers=headers) as response:
+        async with self.http_client.post(self.__get_url(path), json=json_body, headers=headers) as response:
+            json_content = json.loads(await response.content.read())
+            response.json_content = json_content
+
+            return response
+
+    async def __put_request(self, path, json_body=None):
+        headers = self.__get_headers();
+
+        async with self.http_client.put(self.__get_url(path), json=json_body, headers=headers) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
