@@ -18,4 +18,4 @@ class CommandProcessor:
 
         match message_parts[0]:
             case "!tl":
-                await self.translator.translate(message_parts)
+                return await self.translator.translate(message_parts)

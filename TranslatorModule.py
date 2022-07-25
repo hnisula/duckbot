@@ -26,15 +26,35 @@ class TranslatorModule:
             source_language = language_option[0]
         
         try:
-            response = self.deepl_translator.translate_text(
+            translation = self.deepl_translator.translate_text(
                 text,
                 source_lang=source_language,
                 target_lang=language_option[-1])
             
-            print(response)
+            return self.create_result(
+                translation.text,
+                source_language or translation.detected_source_lang,
+                language_option[-1])
         except deepl.DeepLException as ex:
-            print(ex.args)
+            return self.create_error_result(ex.args)
         except ValueError as ex:
-            print(ex.args)
+            return self.create_error_result(ex.args)
         except TypeError as ex:
-            print(ex.args)
+            return self.create_error_result(ex.args)
+
+    def create_result(self, text, source_lang, target_lang):
+        return {
+                "type": "translation",
+                "status": "success",
+                "text": text,
+                "source_lang": source_lang,
+                "target_lang": target_lang,
+            }
+    
+    def create_error_result(self, error):
+        return {
+                "type": "translation",
+                "status": "error",
+                "error": error
+            }
+    

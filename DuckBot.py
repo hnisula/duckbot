@@ -1,3 +1,4 @@
+import json
 import psycopg2
 from MatrixClient import MatrixClient
 from MatrixClientPgStorage import MatrixClientPgStorage
@@ -32,6 +33,13 @@ class DuckBot:
         print("Running sync loop")
         await self.matrix_client.sync_loop()
     
-    async def text_callback(self, event, room_status):
+    async def text_callback(self, event, room_info):
         message = event["content"]["body"]
-        await self.command_processor.parse_command(message)
+
+        cmd_result = await self.command_processor.parse_command(message)
+
+        if cmd_result["type"] == "translation":
+            if cmd_result["status"] == "success":
+                await self.matrix_client.send_room_message(room_info["room_id"], cmd_result["text"])
+            elif cmd_result["status"] == "error":
+                await self.matrix_client.send_room_message(room_info["room_id"], json.dumps(cmd_result["error"]))

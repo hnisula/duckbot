@@ -1,3 +1,4 @@
+from uuid import uuid4
 import aiohttp
 import json
 from enum import Enum
@@ -31,6 +32,8 @@ class MatrixClient:
         self.callbacks[event_type].append(callback)
     
     async def login(self, username, password, device_id, device_name):
+        self.username = f"@{username}:ducksquad.io"
+        
         login_request = {
             "type": "m.login.password",
             "identifier": {
@@ -46,8 +49,13 @@ class MatrixClient:
 
             self.access_token = content["access_token"]
     
-    async def send(self, room_id, message):
-        return hej
+    async def send_room_message(self, room_id, message):
+        event = self.__create_message_event(room_id, message)
+        txn_id = uuid4()
+        event_type = event["type"]
+        response = await self.__put_request(f"/_matrix/client/v3/rooms/{room_id}/send/{event_type}/{txn_id}", event)
+
+        print(response)
     
     async def join_room(self, room_id):
         await self.__post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
@@ -82,20 +90,33 @@ class MatrixClient:
     
     async def __handle_room_events(self, room_events, room_status):
         # The following is not that pretty
-        for room_name in room_events:
-            room = room_events[room_name]
+        for room_id in room_events:
+            room = room_events[room_id]
             
             for event in room["timeline"]["events"]:
                 type = event["type"]
 
                 if type in self.callbacks:
                     for callback in self.callbacks[type]:
-                        await callback(event, room_status)
+                        room_info = {
+                            "room_id": room_id,
+                            "room_status": room_status
+                        }
+                        await callback(event, room_info)
     
     async def __handle_room_invites(self, invites):
         if self.auto_join:
             for room_id in invites:
                 await self.join_room(room_id)
+
+    def __create_message_event(self, room_id, message):
+        return {
+            "type": "m.room.message",
+            "sender": self.username,
+            "body": message,
+            "msgtype": "m.text",
+            "room_id": room_id
+        }
 
     async def __get_request(self, path, params):
         headers = self.__get_headers()
@@ -110,6 +131,15 @@ class MatrixClient:
         headers = self.__get_headers();
 
         async with self.http_client.post(self.__get_url(path), json=json_body, headers=headers) as response:
+            json_content = json.loads(await response.content.read())
+            response.json_content = json_content
+
+            return response
+
+    async def __put_request(self, path, json_body=None):
+        headers = self.__get_headers();
+
+        async with self.http_client.put(self.__get_url(path), json=json_body, headers=headers) as response:
             json_content = json.loads(await response.content.read())
             response.json_content = json_content
 
