@@ -1,9 +1,9 @@
-from TranslatorModule import TranslatorModule
+from TranslationModule import TranslationModule
 
 class CommandProcessor:
     @classmethod
     async def create(cls, config):
-        translator = await TranslatorModule.create(config)
+        translator = await TranslationModule.create(config)
 
         return cls(translator)
     

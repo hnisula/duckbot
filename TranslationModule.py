@@ -1,7 +1,7 @@
-from multiprocessing.sharedctypes import Value
 import deepl
+from CommandResponse import CommandResponse, CommandResponseType
 
-class TranslatorModule:
+class TranslationModule:
     @classmethod
     async def create(cls, config):
         auth_key = config["translator"]["auth_key"]
@@ -31,16 +31,16 @@ class TranslatorModule:
                 source_lang=source_lang,
                 target_lang=target_lang)
             
-            return self.create_result(
+            return self.create_response(
                 translation.text,
                 source_lang or translation.detected_source_lang,
                 target_lang)
         except deepl.DeepLException as ex:
-            return self.create_error_result(ex.args)
+            return self.create_error_response(ex.args)
         except ValueError as ex:
-            return self.create_error_result(ex.args)
+            return self.create_error_response(ex.args)
         except TypeError as ex:
-            return self.create_error_result(ex.args)
+            return self.create_error_response(ex.args)
 
     def __handle_shorthands(self, language_tag):
         match language_tag:
@@ -49,19 +49,23 @@ class TranslatorModule:
             case _:
                 return language_tag
 
-    def create_result(self, text, source_lang, target_lang):
-        return {
-                "type": "translation",
-                "status": "success",
-                "text": text,
-                "source_lang": source_lang,
-                "target_lang": target_lang,
-            }
+    def create_response(self, text, source_lang, target_lang):
+        response = CommandResponse
+
+        response.type = CommandResponseType.MESSAGE
+        response.status = "success"
+        response.command_type = "translation"
+        response.content = f"Translation [{source_lang.lower()}->{target_lang.lower()}]: {text}"
+
+        return response;
     
-    def create_error_result(self, error):
-        return {
-                "type": "translation",
-                "status": "error",
-                "error": error
-            }
+    def create_error_response(self, error):
+        response = CommandResponse
+        
+        response.type = CommandResponseType.MESSAGE
+        response.status = "error"
+        response.command_type = "translation"
+        response.content = f"Translation failed: {error}"
+
+        return response
     

@@ -3,6 +3,7 @@ import psycopg2
 from MatrixClient import MatrixClient
 from MatrixClientPgStorage import MatrixClientPgStorage
 from CommandProcessor import CommandProcessor
+from CommandResponse import CommandResponseType
 
 class DuckBot:
     @classmethod
@@ -41,8 +42,9 @@ class DuckBot:
         if not cmd_result:
             return
 
-        if cmd_result["type"] == "translation":
-            if cmd_result["status"] == "success":
-                await self.matrix_client.send_room_message(room_info["room_id"], cmd_result["text"])
-            elif cmd_result["status"] == "error":
-                await self.matrix_client.send_room_message(room_info["room_id"], json.dumps(cmd_result["error"]))
+        await self.process_command_response(cmd_result, room_info)
+    
+    async def process_command_response(self, cmd_result, room_info):
+        match cmd_result.type:
+            case CommandResponseType.MESSAGE:
+                await self.matrix_client.send_room_message(room_info["room_id"], cmd_result.content)
