@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "duckbot_matrix"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
     { name = "Hannes Nisula", email = "hannes@ducksquad.dev" }
 ]
@@ -17,5 +17,7 @@ dependencies = [
     "psycopg2",
     "uuid",
     "aiohttp",
-    "deepl"
+    "deepl",
+    "yaml",
+    "json"
 ]
