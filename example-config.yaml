@@ -1,0 +1,15 @@
+server:
+  url: ""
+bot:
+  username: ""
+  password: ""
+device:
+  name: ""
+  id: ""
+storage:
+  host: ""
+  db_name: ""
+  username: ""
+  password: ""
+translator:
+  auth_key: ""

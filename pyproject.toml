@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "duckbot-matrix"
+version = "0.1.1"
+authors = [
+    { name = "Hannes Nisula", email = "hannes@ducksquad.dev" }
+]
+description = "A simple Matrix bot."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
