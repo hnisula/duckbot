@@ -1,9 +1,8 @@
-import json
 import psycopg2
-from MatrixClient import MatrixClient
-from MatrixClientPgStorage import MatrixClientPgStorage
-from CommandProcessor import CommandProcessor
-from CommandResponse import CommandResponseType
+from .matrix_client import MatrixClient
+from .matrix_client_pg_storage import MatrixClientPgStorage
+from .command_processor import CommandProcessor
+from .command_response import CommandResponseType
 
 class DuckBot:
     @classmethod

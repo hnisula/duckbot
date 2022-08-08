@@ -1,5 +1,5 @@
 import deepl
-from CommandResponse import CommandResponse, CommandResponseType
+from .command_response import CommandResponse, CommandResponseType
 
 class TranslationModule:
     @classmethod

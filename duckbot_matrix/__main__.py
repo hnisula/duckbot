@@ -1,6 +1,6 @@
+from .config import read_config_file
+from .duckbot import DuckBot
 import asyncio
-from .Config import read_config_file
-from .DuckBot import DuckBot
 
 async def main():
     config = read_config_file("config.yaml")

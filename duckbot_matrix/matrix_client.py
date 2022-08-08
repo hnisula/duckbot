@@ -2,7 +2,7 @@ from uuid import uuid4
 import aiohttp
 import json
 from enum import Enum
-from MatrixClientPgStorage import MatrixClientPgStorage
+from .matrix_client_pg_storage import MatrixClientPgStorage
 
 class RoomStatus(Enum):
         JOINED = 1

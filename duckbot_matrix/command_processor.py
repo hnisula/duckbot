@@ -1,4 +1,4 @@
-from TranslationModule import TranslationModule
+from .translation_module import TranslationModule
 
 class CommandProcessor:
     @classmethod
