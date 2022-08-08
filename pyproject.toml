@@ -12,3 +12,15 @@ description = "A simple Matrix bot."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
+dependencies = [
+    "asyncio",
+    "enum",
+    "string",
+    "yaml",
+    "json",
+    "psycopg2",
+    "uuid",
+    "aiohttp",
+    "enum",
+    "deepl"
+]
