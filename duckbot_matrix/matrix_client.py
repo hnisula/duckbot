@@ -49,8 +49,8 @@ class MatrixClient:
 
             self.access_token = content["access_token"]
     
-    async def send_room_message(self, room_id, message):
-        event = self.__create_message_event(room_id, message)
+    async def send_room_message(self, room_id, message, formatted_message=None):
+        event = self.__create_message_event(room_id, message, formatted_message)
         txn_id = uuid4()
         event_type = event["type"]
         
@@ -114,14 +114,20 @@ class MatrixClient:
             for room_id in invites:
                 await self.join_room(room_id)
 
-    def __create_message_event(self, room_id, message):
-        return {
+    def __create_message_event(self, room_id, message, formatted_message=None):
+        message = {
             "type": "m.room.message",
             "sender": self.username,
             "body": message,
             "msgtype": "m.text",
             "room_id": room_id
         }
+
+        if formatted_message:
+            message["format"] = "org.matrix.custom.html"
+            message["formatted_body"] = formatted_message
+
+        return message
 
     async def __get_request(self, path, params):
         headers = self.__get_headers()

@@ -1,0 +1,4 @@
+<h1>Commands</h1>
+<ul>
+<li><code>!tl &lt;source_lang&gt; &lt;target_lang&gt; &lt;text&gt;</code></li>
+</ul>
