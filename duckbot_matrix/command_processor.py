@@ -17,7 +17,7 @@ class CommandProcessor:
         # with open("duckbot_matrix/help_text_formatted.txt") as file:
         #     self.help_text_formatted = file.read()
 
-        self.read_version()
+        # self.read_version()
     
     async def parse_command(self, message):
         if not message.startswith("!"):
@@ -30,8 +30,8 @@ class CommandProcessor:
                 return await self.translator.translate(message_parts)
             case "!help":
                 return self.help_command(message_parts)
-            case "!version":
-                return self.version_command(message_parts)
+            # case "!version":
+            #     return self.version_command(message_parts)
     
     def help_command(self, message_parts):
         if message_parts[0] != "!help":
