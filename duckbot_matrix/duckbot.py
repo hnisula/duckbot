@@ -2,7 +2,7 @@ import psycopg2
 from .matrix_client import MatrixClient
 from .matrix_client_pg_storage import MatrixClientPgStorage
 from .command_processor import CommandProcessor
-from .command_response import CommandResponseType
+from .command_response import CommandResponse, CommandResponseType
 
 class DuckBot:
     @classmethod
@@ -44,7 +44,10 @@ class DuckBot:
 
         await self.process_command_response(cmd_result, room_info)
     
-    async def process_command_response(self, cmd_result, room_info):
+    async def process_command_response(self, cmd_result: CommandResponse, room_info):
         match cmd_result.type:
             case CommandResponseType.MESSAGE:
-                await self.matrix_client.send_room_message(room_info["room_id"], cmd_result.content)
+                await self.matrix_client.send_room_message(
+                    room_info["room_id"],
+                    cmd_result.content,
+                    getattr(cmd_result, "formatted_content", None))
