@@ -65,7 +65,7 @@ class MatrixClient:
         while True:
             params["timeout"] = 20000
 
-            if self.storage.config["since"]:
+            if "since" in self.storage.config:
                 params["since"] = self.storage.config["since"]
             
             response = await self.__get_request("/_matrix/client/v3/sync", params)
