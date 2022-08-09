@@ -18,6 +18,5 @@ dependencies = [
     "uuid",
     "aiohttp",
     "deepl",
-    "pyyaml",
-    "json"
+    "pyyaml"
 ]
