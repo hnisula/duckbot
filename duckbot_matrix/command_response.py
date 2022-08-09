@@ -9,4 +9,5 @@ class CommandResponse:
     status: string
     command_type: string
     error: string
-    content: object
+    content: string
+    formatted_content: string
