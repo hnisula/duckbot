@@ -18,8 +18,8 @@ class TranslationModule:
         if command != "!tl":
             print(f"ERROR: Translator module received unknown command ({command})")
         
-        source_lang = self.__handle_shorthands(message_parts[1])
-        target_lang = self.__handle_shorthands(message_parts[2])
+        source_lang = message_parts[1]
+        target_lang = message_parts[2]
         text = " ".join(message_parts[3:])
 
         if source_lang == "." or source_lang == "?":
@@ -42,6 +42,7 @@ class TranslationModule:
         except TypeError as ex:
             return self.create_error_response(ex.args)
 
+    # It seems the library does not require this but the API does
     def __handle_shorthands(self, language_tag):
         match language_tag:
             case "en":
