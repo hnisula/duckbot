@@ -26,10 +26,11 @@ class DuckBot:
 
         matrix_client.add_callback("m.room.message", self.text_callback)
     
-    async def run(self, username, password, device_id, device_name):
+    async def run(self, username, password, device_id, device_name, display_name):
         print(f"Logging in {username}...")
         await self.matrix_client.login(username, password, device_id, device_name)
         print("Logged in")
+        await self.matrix_client.set_display_name(display_name)
         print("Running sync loop")
         await self.matrix_client.sync_loop()
     

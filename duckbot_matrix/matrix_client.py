@@ -59,6 +59,12 @@ class MatrixClient:
     async def join_room(self, room_id):
         await self.__post_request(f"/_matrix/client/v3/rooms/{room_id}/join")
 
+    async def set_display_name(self, display_name):
+        body = {
+            "displayname": display_name
+        }
+        await self.__put_request(f"/_matrix/client/v3/profile/{self.username}/displayname", body)
+
     async def sync_loop(self):
         params = {}
         

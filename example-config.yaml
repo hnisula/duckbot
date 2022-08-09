@@ -3,6 +3,7 @@ server:
 bot:
   username: ""
   password: ""
+  display_name: ""
 device:
   name: ""
   id: ""
