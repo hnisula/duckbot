@@ -28,8 +28,8 @@ class TranslationModule:
         try:
             translation = self.deepl_translator.translate_text(
                 text,
-                source_lang=source_lang,
-                target_lang=target_lang)
+                source_lang=self.__handle_shorthands(source_lang),
+                target_lang=self.__handle_shorthands(target_lang))
             
             return self.create_response(
                 translation.text,
